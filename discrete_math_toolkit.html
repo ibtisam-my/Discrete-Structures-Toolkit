@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discrete Math Toolkit</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161922;
+    --surface2: #1e2330;
+    --border: #2a3044;
+    --accent: #4f8ef7;
+    --accent2: #7c5cbf;
+    --accent3: #3ec897;
+    --accent4: #f7934f;
+    --text: #e8ecf4;
+    --muted: #6b7899;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+  /* Header */
+  header {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+    background: var(--surface);
+  }
+  .logo { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+  .logo span { color: var(--muted); }
+  header h1 { font-size: 18px; font-weight: 500; color: var(--text); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 2px; padding: 0 32px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 14px 24px; font-family: var(--mono); font-size: 12px; letter-spacing: 1px;
+    cursor: pointer; border: none; background: none; color: var(--muted);
+    border-bottom: 2px solid transparent; transition: all .2s; text-transform: uppercase;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab[data-tab="logic"].active { color: var(--accent2); border-bottom-color: var(--accent2); }
+  .tab[data-tab="graphs"].active { color: var(--accent3); border-bottom-color: var(--accent3); }
+
+  /* Layout */
+  .workspace { display: grid; grid-template-columns: 340px 1fr; min-height: calc(100vh - 110px); }
+  .panel { padding: 28px; border-right: 1px solid var(--border); background: var(--surface); overflow-y: auto; }
+  .output { padding: 28px; overflow-y: auto; }
+  .module { display: none; width: 100%; }
+  .module.active { display: contents; }
+
+  /* Form elements */
+  label { font-size: 12px; font-family: var(--mono); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 8px; }
+  input[type=text], textarea, select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 14px; font-family: var(--mono); font-size: 13px; color: var(--text);
+    outline: none; transition: border .2s; margin-bottom: 16px;
+  }
+  input[type=text]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+  select { cursor: pointer; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+    border: 1px solid var(--accent); border-radius: 6px; background: none;
+    color: var(--accent); font-family: var(--mono); font-size: 12px; letter-spacing: 1px;
+    cursor: pointer; transition: all .2s; text-transform: uppercase; width: 100%; justify-content: center;
+  }
+  .btn:hover { background: var(--accent); color: var(--bg); }
+  .btn.purple { border-color: var(--accent2); color: var(--accent2); }
+  .btn.purple:hover { background: var(--accent2); color: #fff; }
+  .btn.green { border-color: var(--accent3); color: var(--accent3); }
+  .btn.green:hover { background: var(--accent3); color: var(--bg); }
+  .btn-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .btn-row .btn { width: auto; flex: 1; }
+
+  /* Result boxes */
+  .result-box {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 20px; margin-bottom: 16px; font-family: var(--mono); font-size: 13px; line-height: 1.8;
+  }
+  .result-title { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+  .result-val { color: var(--accent); font-size: 15px; font-weight: 700; word-break: break-all; }
+  .result-val.purple { color: var(--accent2); }
+  .result-val.green { color: var(--accent3); }
+  .result-val.orange { color: var(--accent4); }
+
+  /* Steps */
+  .steps { margin-top: 16px; }
+  .step-item { display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start; }
+  .step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--bg); font-size: 11px; font-family: var(--mono); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; }
+  .step-num.purple { background: var(--accent2); color: #fff; }
+  .step-num.green { background: var(--accent3); }
+  .step-text { font-size: 13px; color: var(--text); line-height: 1.6; padding-top: 2px; font-family: var(--mono); }
+
+  /* Venn */
+  #venn-svg { width: 100%; max-width: 400px; display: block; margin: 0 auto; }
+
+  /* Truth table */
+  .tt-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+  th { background: var(--surface2); color: var(--accent2); padding: 10px 14px; text-align: center; border: 1px solid var(--border); font-weight: 700; }
+  td { padding: 8px 14px; text-align: center; border: 1px solid var(--border); }
+  tr:nth-child(even) td { background: var(--surface2); }
+  .tt-true { color: var(--accent3); font-weight: 700; }
+  .tt-false { color: #e05252; }
+
+  /* Graph canvas */
+  #graph-canvas {
+    width: 100%; height: 420px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; cursor: crosshair;
+    display: block;
+  }
+  .graph-info { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .graph-mode { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mode-btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px; background: none; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all .2s; }
+  .mode-btn.active { border-color: var(--accent3); color: var(--accent3); background: rgba(62,200,151,.08); }
+
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-family: var(--mono); margin-right: 6px; margin-bottom: 4px; }
+  .chip.blue { background: rgba(79,142,247,.12); color: var(--accent); border: 1px solid rgba(79,142,247,.25); }
+  .chip.green { background: rgba(62,200,151,.12); color: var(--accent3); border: 1px solid rgba(62,200,151,.25); }
+
+  .empty-state { color: var(--muted); font-family: var(--mono); font-size: 13px; text-align: center; padding: 40px 20px; }
+  .section-sep { height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* Adjacency matrix */
+  .adj-matrix td, .adj-matrix th { padding: 6px 10px; font-size: 12px; min-width: 32px; }
+
+  /* Animation */
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: none; } }
+  .anim { animation: fadeIn .3s ease forwards; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Discrete<span>//</span>Math</div>
+  <h1>All-in-One Toolkit</h1>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="sets">Sets</button>
+  <button class="tab" data-tab="logic">Logic</button>
+  <button class="tab" data-tab="graphs">Graphs</button>
+</div>
+
+<div class="workspace">
+
+  <!-- ═══════════════ SETS MODULE ════════════════ -->
+  <div class="module active" id="mod-sets">
+    <div class="panel">
+      <label>Set A</label>
+      <input type="text" id="setA" placeholder="e.g. 1, 2, 3, 4" value="1, 2, 3, 4, 5">
+      <label>Set B</label>
+      <input type="text" id="setB" placeholder="e.g. 3, 4, 5, 6" value="3, 4, 5, 6, 7">
+      <label>Universal Set U (optional)</label>
+      <input type="text" id="setU" placeholder="e.g. 1,2,3,4,5,6,7,8,9,10" value="1,2,3,4,5,6,7,8,9,10">
+      <div class="section-sep"></div>
+      <label>Operation</label>
+      <select id="setOp">
+        <option value="union">A ∪ B — Union</option>
+        <option value="intersection">A ∩ B — Intersection</option>
+        <option value="diff_ab">A \ B — Difference</option>
+        <option value="diff_ba">B \ A — Difference</option>
+        <option value="sym_diff">A △ B — Symmetric Difference</option>
+        <option value="comp_a">A′ — Complement of A</option>
+        <option value="comp_b">B′ — Complement of B</option>
+        <option value="power_a">P(A) — Power Set of A</option>
+        <option value="cartesian">A × B — Cartesian Product</option>
+      </select>
+      <button class="btn" onclick="computeSet()">Compute →</button>
+    </div>
+    <div class="output" id="sets-output">
+      <div class="empty-state">← Configure sets and choose an operation</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ LOGIC MODULE ════════════════ -->
+  <div class="module" id="mod-logic">
+    <div class="panel">
+      <label>Propositional Expression</label>
+      <textarea id="logicExpr" placeholder="e.g. (p AND q) OR (NOT p)">( p AND q ) OR ( NOT p )</textarea>
+      <div style="font-size:11px; color:var(--muted); font-family:var(--mono); margin-bottom:16px; line-height:1.8;">
+        Operators: AND, OR, NOT, IMPLIES, IFF<br>
+        Variables: single letters p, q, r, s …
+      </div>
+      <div class="btn-row">
+        <button class="btn purple" onclick="buildTruthTable()">Truth Table</button>
+        <button class="btn purple" onclick="classifyExpr()">Classify</button>
+      </div>
+    </div>
+    <div class="output" id="logic-output">
+      <div class="empty-state">← Enter an expression to generate a truth table</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ GRAPH MODULE ════════════════ -->
+  <div class="module" id="mod-graphs">
+    <div class="panel">
+      <label>Graph Type</label>
+      <select id="graphType" onchange="redrawGraph()">
+        <option value="undirected">Undirected</option>
+        <option value="directed">Directed</option>
+      </select>
+      <label>Mode</label>
+      <div class="graph-mode">
+        <button class="mode-btn active" id="mode-node" onclick="setGraphMode('node')">Add Node</button>
+        <button class="mode-btn" id="mode-edge" onclick="setGraphMode('edge')">Add Edge</button>
+        <button class="mode-btn" id="mode-del" onclick="setGraphMode('delete')">Delete</button>
+      </div>
+      <div class="section-sep"></div>
+      <label>Algorithm</label>
+      <select id="graphAlgo">
+        <option value="bfs">BFS — Breadth First Search</option>
+        <option value="dfs">DFS — Depth First Search</option>
+        <option value="path">Shortest Path</option>
+      </select>
+      <label>Start Node</label>
+      <input type="text" id="startNode" placeholder="e.g. A">
+      <label>End Node (path only)</label>
+      <input type="text" id="endNode" placeholder="e.g. D">
+      <button class="btn green" onclick="runGraphAlgo()">Run Algorithm →</button>
+      <div class="section-sep"></div>
+      <button class="btn" style="margin-top:4px;opacity:.6;font-size:11px;" onclick="clearGraph()">Clear Graph</button>
+      <button class="btn" style="margin-top:8px;opacity:.6;font-size:11px;" onclick="loadExample()">Load Example Graph</button>
+    </div>
+    <div class="output" style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+      <div class="graph-info" id="graph-info">Click canvas to add nodes • Switch to Edge mode to connect them</div>
+      <canvas id="graph-canvas"></canvas>
+      <div id="graph-result"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// TAB NAVIGATION
+// ─────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.module').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('mod-' + t.dataset.tab).classList.add('active');
+    if (t.dataset.tab === 'graphs') setTimeout(redrawGraph, 50);
+  });
+});
+
+// ─────────────────────────────────────────────
+// SETS MODULE
+// ─────────────────────────────────────────────
+function parseSet(str) {
+  if (!str.trim()) return new Set();
+  return new Set(str.split(',').map(x => x.trim()).filter(Boolean));
+}
+
+function setToStr(s) {
+  const arr = [...s];
+  const nums = arr.filter(x => !isNaN(x)).map(Number).sort((a,b)=>a-b);
+  const strs = arr.filter(x => isNaN(x)).sort();
+  return '{' + [...nums.map(String), ...strs].join(', ') + '}';
+}
+
+function computeSet() {
+  const A = parseSet(document.getElementById('setA').value);
+  const B = parseSet(document.getElementById('setB').value);
+  const U = parseSet(document.getElementById('setU').value);
+  const op = document.getElementById('setOp').value;
+
+  let result, title, steps = [], color = 'blue';
+
+  switch(op) {
+    case 'union':
+      result = new Set([...A, ...B]);
+      title = 'A ∪ B (Union)';
+      steps = [
+        `A = ${setToStr(A)}`,
+        `B = ${setToStr(B)}`,
+        `Combine all elements from both sets, removing duplicates`,
+        `A ∪ B = ${setToStr(result)}`
+      ];
+      break;
+    case 'intersection':
+      result = new Set([...A].filter(x => B.has(x)));
+      title = 'A ∩ B (Intersection)';
+      steps = [
+        `A = ${setToStr(A)}`,
+        `B = ${setToStr(B)}`,
+        `Keep only elements present in BOTH sets`,
+        `A ∩ B = ${setToStr(result)}`
+      ];
+      break;
+    case 'diff_ab':
+      result = new Set([...A].filter(x => !B.has(x)));
+      title = 'A \\ B (Difference)';
+      steps = [
+        `A = ${setToStr(A)}`,
+        `B = ${setToStr(B)}`,
+        `Keep elements in A that are NOT in B`,
+        `A \\ B = ${setToStr(result)}`
+      ];
+      break;
+    case 'diff_ba':
+      result = new Set([...B].filter(x => !A.has(x)));
+      title = 'B \\ A (Difference)';
+      steps = [
+        `B = ${setToStr(B)}`, `A = ${setToStr(A)}`,
+        `Keep elements in B that are NOT in A`,
+        `B \\ A = ${setToStr(result)}`
+      ];
+      break;
+    case 'sym_diff':
+      result = new Set([...[...A].filter(x => !B.has(x)), ...[...B].filter(x => !A.has(x))]);
+      title = 'A △ B (Symmetric Difference)';
+      steps = [
+        `A = ${setToStr(A)}`, `B = ${setToStr(B)}`,
+        `Elements in A but not B: ${setToStr(new Set([...A].filter(x=>!B.has(x))))}`,
+        `Elements in B but not A: ${setToStr(new Set([...B].filter(x=>!A.has(x))))}`,
+        `A △ B = ${setToStr(result)}`
+      ];
+      break;
+    case 'comp_a':
+      if (!U.size) { alert("Please define Universal Set U"); return; }
+      result = new Set([...U].filter(x => !A.has(x)));
+      title = "A′ (Complement of A)";
+      steps = [`U = ${setToStr(U)}`, `A = ${setToStr(A)}`, `A′ = U \\ A = ${setToStr(result)}`];
+      break;
+    case 'comp_b':
+      if (!U.size) { alert("Please define Universal Set U"); return; }
+      result = new Set([...U].filter(x => !B.has(x)));
+      title = "B′ (Complement of B)";
+      steps = [`U = ${setToStr(U)}`, `B = ${setToStr(B)}`, `B′ = U \\ B = ${setToStr(result)}`];
+      break;
+    case 'power_a': {
+      const arr = [...A];
+      const subsets = [];
+      for (let i = 0; i < (1 << arr.length); i++) {
+        const sub = arr.filter((_, j) => i & (1 << j));
+        subsets.push('{' + sub.join(', ') + '}');
+      }
+      const out = document.getElementById('sets-output');
+      out.innerHTML = `<div class="result-box anim">
+        <div class="result-title">P(A) — Power Set</div>
+        <div class="result-val">|P(A)| = ${subsets.length} subsets</div>
+        <div style="margin-top:12px;line-height:2;">
+          ${subsets.map(s => `<span class="chip blue">${s || '∅'}</span>`).join('')}
+        </div>
+      </div>
+      <div class="result-box anim">
+        <div class="result-title">Steps</div>
+        ${makeSteps([
+          `A = ${setToStr(A)}  →  |A| = ${A.size}`,
+          `P(A) has 2^${A.size} = ${subsets.length} subsets`,
+          `Each subset corresponds to a binary mask of element inclusion`
+        ], 'blue')}</div>`;
+      return;
+    }
+    case 'cartesian': {
+      const pairs = [];
+      A.forEach(a => B.forEach(b => pairs.push(`(${a},${b})`)));
+      const out = document.getElementById('sets-output');
+      out.innerHTML = `<div class="result-box anim">
+        <div class="result-title">A × B — Cartesian Product</div>
+        <div class="result-val">|A × B| = ${pairs.length} pairs</div>
+        <div style="margin-top:12px;line-height:2;">
+          ${pairs.map(p => `<span class="chip blue">${p}</span>`).join('')}
+        </div>
+      </div>
+      <div class="result-box anim">
+        <div class="result-title">Steps</div>
+        ${makeSteps([`|A| = ${A.size}, |B| = ${B.size}`, `|A × B| = ${A.size} × ${B.size} = ${pairs.length}`, `Pair every element of A with every element of B`], 'blue')}
+      </div>`;
+      return;
+    }
+  }
+
+  const out = document.getElementById('sets-output');
+  out.innerHTML = `
+    <div class="result-box anim">
+      <div class="result-title">${title}</div>
+      <div class="result-val">${setToStr(result)}</div>
+      <div style="margin-top:8px;color:var(--muted);font-size:12px;">Cardinality: |result| = ${result.size}</div>
+    </div>
+    <div class="result-box anim">
+      <div class="result-title">Step-by-Step</div>
+      ${makeSteps(steps, 'blue')}
+    </div>
+    ${drawVenn(A, B, result, op)}
+  `;
+}
+
+function makeSteps(steps, color='blue') {
+  return `<div class="steps">${steps.map((s,i) => `
+    <div class="step-item">
+      <div class="step-num ${color === 'purple' ? 'purple' : color === 'green' ? 'green' : ''}">${i+1}</div>
+      <div class="step-text">${s}</div>
+    </div>`).join('')}</div>`;
+}
+
+function drawVenn(A, B, result, op) {
+  const allA = [...A], allB = [...B];
+  const onlyA = allA.filter(x => !B.has(x));
+  const both  = allA.filter(x => B.has(x));
+  const onlyB = allB.filter(x => !A.has(x));
+
+  const inLeft   = op === 'union' || op === 'diff_ab' || op === 'sym_diff';
+  const inMiddle = op === 'union' || op === 'intersection' || op === 'sym_diff' ? (op !== 'sym_diff') : false;
+  const inRight  = op === 'union' || op === 'diff_ba' || op === 'sym_diff';
+  const isInt    = op === 'intersection';
+
+  const la = inLeft || isInt ? '' : '#4f8ef733';
+  const lm = isInt || op === 'union' ? '#4f8ef766' : (op === 'sym_diff' ? '' : '');
+  const lr = inRight || isInt ? '' : '';
+
+  const hlLeft   = ['union','diff_ab','sym_diff'].includes(op) ? '#4f8ef744' : 'none';
+  const hlMiddle = ['union','intersection'].includes(op) ? '#4f8ef7aa' : op === 'sym_diff' ? 'none' : 'none';
+  const hlRight  = ['union','diff_ba','sym_diff'].includes(op) ? '#7c5cbf44' : 'none';
+
+  const clip = `<clipPath id="clipA"><circle cx="155" cy="100" r="75"/></clipPath>
+                <clipPath id="clipB"><circle cx="215" cy="100" r="75"/></clipPath>`;
+
+  return `<div class="result-box anim">
+    <div class="result-title">Venn Diagram</div>
+    <svg id="venn-svg" viewBox="0 0 370 200">
+      <defs>${clip}</defs>
+      <!-- A only region highlight -->
+      <circle cx="155" cy="100" r="75" fill="${['union','diff_ab','sym_diff'].includes(op)?'rgba(79,142,247,.18)':'rgba(79,142,247,.06)'}" stroke="none"/>
+      <!-- B only region highlight -->
+      <circle cx="215" cy="100" r="75" fill="${['union','diff_ba','sym_diff'].includes(op)?'rgba(124,92,191,.18)':'rgba(124,92,191,.06)'}" stroke="none"/>
+      <!-- Intersection highlight -->
+      <circle cx="215" cy="100" r="75" clip-path="url(#clipA)" fill="${['union','intersection'].includes(op)?'rgba(79,142,247,.35)':'rgba(30,35,50,.6)'}"/>
+      <!-- Borders -->
+      <circle cx="155" cy="100" r="75" fill="none" stroke="#4f8ef7" stroke-width="1.5" opacity=".6"/>
+      <circle cx="215" cy="100" r="75" fill="none" stroke="#7c5cbf" stroke-width="1.5" opacity=".6"/>
+      <!-- Labels -->
+      <text x="115" y="50" fill="#4f8ef7" font-family="Space Mono" font-size="13" font-weight="700">A</text>
+      <text x="245" y="50" fill="#7c5cbf" font-family="Space Mono" font-size="13" font-weight="700">B</text>
+      <!-- Elements -->
+      <text x="95" y="105" fill="#e8ecf4" font-family="Space Mono" font-size="9" text-anchor="middle">${onlyA.slice(0,4).join(' ')}</text>
+      <text x="185" y="105" fill="#e8ecf4" font-family="Space Mono" font-size="9" text-anchor="middle">${both.slice(0,4).join(' ')}</text>
+      <text x="275" y="105" fill="#e8ecf4" font-family="Space Mono" font-size="9" text-anchor="middle">${onlyB.slice(0,4).join(' ')}</text>
+      <!-- Result label -->
+      <text x="185" y="175" fill="#6b7899" font-family="Space Mono" font-size="10" text-anchor="middle">shaded = result region</text>
+    </svg>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+// LOGIC MODULE
+// ─────────────────────────────────────────────
+function getVars(expr) {
+  const vars = new Set(expr.match(/\b[a-z]\b/g) || []);
+  return [...vars].sort();
+}
+
+function evalExpr(expr, assignment) {
+  let e = expr.toUpperCase()
+    .replace(/IFF/g, ' IFF ')
+    .replace(/IMPLIES/g, ' IMPLIES ')
+    .replace(/\bAND\b/g, '&&')
+    .replace(/\bOR\b/g, '||')
+    .replace(/\bNOT\b/g, '!')
+    .trim();
+
+  for (const [v, val] of Object.entries(assignment)) {
+    e = e.replace(new RegExp('\\b' + v.toUpperCase() + '\\b', 'g'), val ? 'true' : 'false');
+  }
+
+  // Handle IFF and IMPLIES manually
+  e = e.replace(/true\s+IFF\s+true/g, 'true').replace(/false\s+IFF\s+false/g, 'true')
+       .replace(/true\s+IFF\s+false/g, 'false').replace(/false\s+IFF\s+true/g, 'false');
+  e = e.replace(/true\s+IMPLIES\s+true/g, 'true').replace(/false\s+IMPLIES\s+false/g, 'true')
+       .replace(/true\s+IMPLIES\s+false/g, 'false').replace(/false\s+IMPLIES\s+true/g, 'true');
+
+  try { return !!eval(e); }
+  catch(err) { return null; }
+}
+
+function buildTruthTable() {
+  const raw = document.getElementById('logicExpr').value.trim();
+  const vars = getVars(raw);
+  if (!vars.length) { alert('No variables found. Use single letters like p, q, r'); return; }
+  if (vars.length > 5) { alert('Max 5 variables supported'); return; }
+
+  const rows = [];
+  const n = vars.length;
+  for (let i = 0; i < (1 << n); i++) {
+    const assignment = {};
+    vars.forEach((v, j) => { assignment[v] = !!(i & (1 << (n - 1 - j))); });
+    const result = evalExpr(raw, assignment);
+    rows.push({ assignment, result });
+  }
+
+  const allTrue  = rows.every(r => r.result);
+  const allFalse = rows.every(r => !r.result);
+  const classification = allTrue ? 'Tautology' : allFalse ? 'Contradiction' : 'Contingency';
+  const classColor = allTrue ? 'green' : allFalse ? 'orange' : 'purple';
+
+  const out = document.getElementById('logic-output');
+  out.innerHTML = `
+    <div class="result-box anim">
+      <div class="result-title">Classification</div>
+      <div class="result-val ${classColor}">${classification}</div>
+      <div style="margin-top:8px;color:var(--muted);font-size:12px;">
+        ${allTrue ? 'Always TRUE for all variable assignments' : allFalse ? 'Always FALSE for all variable assignments' : 'TRUE for some, FALSE for others'}
+      </div>
+    </div>
+    <div class="result-box anim">
+      <div class="result-title">Truth Table — ${raw}</div>
+      <div class="tt-wrap">
+        <table>
+          <thead><tr>
+            ${vars.map(v => `<th>${v}</th>`).join('')}
+            <th>Result</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(row => `<tr>
+              ${vars.map(v => `<td class="${row.assignment[v] ? 'tt-true' : 'tt-false'}">${row.assignment[v] ? 'T' : 'F'}</td>`).join('')}
+              <td class="${row.result ? 'tt-true' : 'tt-false'}">${row.result ? 'T' : 'F'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function classifyExpr() {
+  const raw = document.getElementById('logicExpr').value.trim();
+  const vars = getVars(raw);
+  if (!vars.length) return;
+  const n = vars.length;
+  let trueCount = 0, falseCount = 0;
+  for (let i = 0; i < (1 << n); i++) {
+    const assignment = {};
+    vars.forEach((v, j) => { assignment[v] = !!(i & (1 << (n-1-j))); });
+    evalExpr(raw, assignment) ? trueCount++ : falseCount++;
+  }
+  const total = 1 << n;
+  const classification = trueCount === total ? 'Tautology' : falseCount === total ? 'Contradiction' : 'Contingency';
+  const out = document.getElementById('logic-output');
+  out.innerHTML = `<div class="result-box anim">
+    <div class="result-title">Expression Analysis</div>
+    <div class="result-val ${trueCount===total?'green':falseCount===total?'orange':'purple'}">${classification}</div>
+    <div class="steps" style="margin-top:16px;">
+      ${makeSteps([
+        `Expression: ${raw}`,
+        `Variables: {${vars.join(', ')}}  →  ${total} total rows`,
+        `TRUE in ${trueCount} / ${total} cases  (${Math.round(100*trueCount/total)}%)`,
+        `FALSE in ${falseCount} / ${total} cases`,
+        `Classification: ${classification}`
+      ], 'purple')}
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+// GRAPH MODULE
+// ─────────────────────────────────────────────
+let graphNodes = [], graphEdges = [], graphMode = 'node', edgeStart = null;
+let directed = false, highlighted = [];
+
+const canvas = document.getElementById('graph-canvas');
+const ctx = canvas.getContext('2d');
+
+function setGraphMode(m) {
+  graphMode = m; edgeStart = null;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-' + m).classList.add('active');
+  canvas.style.cursor = m === 'node' ? 'crosshair' : m === 'delete' ? 'not-allowed' : 'pointer';
+  redrawGraph();
+}
+
+function getNodeAt(x, y) {
+  return graphNodes.find(n => Math.hypot(n.x - x, n.y - y) < 20);
+}
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top)  * (canvas.height / rect.height);
+
+  if (graphMode === 'node') {
+    const label = String.fromCharCode(65 + graphNodes.length);
+    graphNodes.push({ x, y, label });
+    highlighted = [];
+  } else if (graphMode === 'edge') {
+    const hit = getNodeAt(x, y);
+    if (!hit) return;
+    if (!edgeStart) { edgeStart = hit; }
+    else {
+      if (edgeStart !== hit) {
+        const exists = graphEdges.some(e => (e.from === edgeStart && e.to === hit) || (!directed && e.from === hit && e.to === edgeStart));
+        if (!exists) graphEdges.push({ from: edgeStart, to: hit });
+      }
+      edgeStart = null;
+    }
+  } else if (graphMode === 'delete') {
+    const hit = getNodeAt(x, y);
+    if (hit) {
+      graphEdges = graphEdges.filter(e => e.from !== hit && e.to !== hit);
+      graphNodes = graphNodes.filter(n => n !== hit);
+      graphNodes.forEach((n, i) => n.label = String.fromCharCode(65 + i));
+    } else {
+      // delete edge
+      const ex = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const ey = (e.clientY - rect.top) * (canvas.height / rect.height);
+      graphEdges = graphEdges.filter(edge => {
+        const mx = (edge.from.x + edge.to.x) / 2;
+        const my = (edge.from.y + edge.to.y) / 2;
+        return Math.hypot(mx - ex, my - ey) > 15;
+      });
+    }
+  }
+  updateGraphInfo();
+  redrawGraph();
+});
+
+function redrawGraph() {
+  directed = document.getElementById('graphType').value === 'directed';
+  const W = canvas.clientWidth || 600;
+  const H = 420;
+  canvas.width = W; canvas.height = H;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw edges
+  graphEdges.forEach(edge => {
+    const isHL = highlighted.includes(edge);
+    ctx.beginPath();
+    ctx.moveTo(edge.from.x, edge.from.y);
+    ctx.lineTo(edge.to.x, edge.to.y);
+    ctx.strokeStyle = isHL ? '#3ec897' : '#2a3044';
+    ctx.lineWidth = isHL ? 3 : 1.5;
+    ctx.stroke();
+
+    if (directed) {
+      const angle = Math.atan2(edge.to.y - edge.from.y, edge.to.x - edge.from.x);
+      const tx = edge.to.x - 22 * Math.cos(angle);
+      const ty = edge.to.y - 22 * Math.sin(angle);
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(tx - 10 * Math.cos(angle - 0.4), ty - 10 * Math.sin(angle - 0.4));
+      ctx.lineTo(tx - 10 * Math.cos(angle + 0.4), ty - 10 * Math.sin(angle + 0.4));
+      ctx.closePath();
+      ctx.fillStyle = isHL ? '#3ec897' : '#4f8ef7';
+      ctx.fill();
+    }
+  });
+
+  // Edge start indicator
+  if (edgeStart) {
+    ctx.beginPath();
+    ctx.arc(edgeStart.x, edgeStart.y, 22, 0, Math.PI * 2);
+    ctx.strokeStyle = '#4f8ef7';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw nodes
+  graphNodes.forEach(node => {
+    const isHL = highlighted.includes(node);
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, 18, 0, Math.PI * 2);
+    ctx.fillStyle = isHL ? '#3ec897' : '#1e2330';
+    ctx.fill();
+    ctx.strokeStyle = isHL ? '#3ec897' : '#4f8ef7';
+    ctx.lineWidth = isHL ? 2.5 : 1.5;
+    ctx.stroke();
+    ctx.fillStyle = isHL ? '#0d0f14' : '#e8ecf4';
+    ctx.font = 'bold 13px Space Mono';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(node.label, node.x, node.y);
+  });
+}
+
+function updateGraphInfo() {
+  document.getElementById('graph-info').textContent =
+    `Nodes: ${graphNodes.length}  •  Edges: ${graphEdges.length}  •  Mode: ${graphMode}`;
+}
+
+function clearGraph() { graphNodes = []; graphEdges = []; highlighted = []; edgeStart = null; redrawGraph(); updateGraphInfo(); document.getElementById('graph-result').innerHTML = ''; }
+
+function loadExample() {
+  clearGraph();
+  const cx = (canvas.clientWidth || 600) / 2;
+  const cy = 210;
+  const positions = [
+    {x: cx, y: 60}, {x: cx+140, y: 140}, {x: cx+80, y: 290},
+    {x: cx-80, y: 290}, {x: cx-140, y: 140}
+  ];
+  positions.forEach((p, i) => graphNodes.push({ ...p, label: String.fromCharCode(65+i) }));
+  [[0,1],[1,2],[2,3],[3,4],[4,0],[0,2],[1,3]].forEach(([a,b]) => graphEdges.push({ from: graphNodes[a], to: graphNodes[b] }));
+  updateGraphInfo();
+  redrawGraph();
+}
+
+function buildAdj() {
+  const adj = {};
+  graphNodes.forEach(n => adj[n.label] = []);
+  graphEdges.forEach(e => {
+    adj[e.from.label].push(e.to.label);
+    if (!directed) adj[e.to.label].push(e.from.label);
+  });
+  return adj;
+}
+
+function runGraphAlgo() {
+  const algo = document.getElementById('graphAlgo').value;
+  const start = document.getElementById('startNode').value.trim().toUpperCase();
+  const end   = document.getElementById('endNode').value.trim().toUpperCase();
+  const adj   = buildAdj();
+
+  if (!graphNodes.length) { alert('Add some nodes first'); return; }
+  if (!adj[start]) { alert(`Node "${start}" not found`); return; }
+
+  highlighted = [];
+  let steps = [], visitOrder = [], result = '';
+
+  if (algo === 'bfs') {
+    const visited = new Set(), queue = [start];
+    visited.add(start);
+    while (queue.length) {
+      const node = queue.shift();
+      visitOrder.push(node);
+      steps.push(`Dequeue ${node} → visit neighbors: [${(adj[node]||[]).join(', ')||'none'}]`);
+      (adj[node]||[]).forEach(nb => { if (!visited.has(nb)) { visited.add(nb); queue.push(nb); } });
+    }
+    result = `BFS order: ${visitOrder.join(' → ')}`;
+    highlighted = graphNodes.filter(n => visitOrder.includes(n.label));
+    graphEdges.forEach(e => { if (visitOrder.includes(e.from.label) && visitOrder.includes(e.to.label)) highlighted.push(e); });
+
+  } else if (algo === 'dfs') {
+    const visited = new Set();
+    function dfs(node) {
+      visited.add(node);
+      visitOrder.push(node);
+      steps.push(`Visit ${node} → neighbors: [${(adj[node]||[]).join(', ')||'none'}]`);
+      (adj[node]||[]).forEach(nb => { if (!visited.has(nb)) dfs(nb); });
+    }
+    dfs(start);
+    result = `DFS order: ${visitOrder.join(' → ')}`;
+    highlighted = graphNodes.filter(n => visitOrder.includes(n.label));
+
+  } else if (algo === 'path') {
+    if (!adj[end]) { alert(`End node "${end}" not found`); return; }
+    const visited = new Set(), prev = {}, queue = [start];
+    visited.add(start);
+    while (queue.length) {
+      const node = queue.shift();
+      if (node === end) break;
+      (adj[node]||[]).forEach(nb => { if (!visited.has(nb)) { visited.add(nb); prev[nb] = node; queue.push(nb); } });
+    }
+    if (!prev[end] && start !== end) {
+      result = `No path from ${start} to ${end}`;
+    } else {
+      const path = []; let cur = end;
+      while (cur) { path.unshift(cur); cur = prev[cur]; }
+      result = `Shortest path: ${path.join(' → ')}  (length ${path.length - 1})`;
+      steps = path.map((n, i) => i === 0 ? `Start at ${n}` : `Move to ${n}`);
+      highlighted = graphNodes.filter(n => path.includes(n.label));
+      graphEdges.forEach(e => {
+        const fi = path.indexOf(e.from.label), ti = path.indexOf(e.to.label);
+        if (fi !== -1 && ti !== -1 && Math.abs(fi-ti)===1) highlighted.push(e);
+      });
+    }
+  }
+
+  redrawGraph();
+
+  // Adjacency matrix
+  const labels = graphNodes.map(n => n.label);
+  const matHtml = `<table class="adj-matrix">
+    <thead><tr><th></th>${labels.map(l=>`<th>${l}</th>`).join('')}</tr></thead>
+    <tbody>${labels.map(row => `<tr><th>${row}</th>${labels.map(col => {
+      const has = graphEdges.some(e => (e.from.label===row&&e.to.label===col)||(!directed&&e.from.label===col&&e.to.label===row));
+      return `<td class="${has?'tt-true':''}">${has?'1':'0'}</td>`;
+    }).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+
+  document.getElementById('graph-result').innerHTML = `
+    <div class="result-box anim">
+      <div class="result-title">Result</div>
+      <div class="result-val green">${result}</div>
+    </div>
+    <div class="result-box anim">
+      <div class="result-title">Steps</div>
+      ${makeSteps(steps.length ? steps : [`Start: ${start}`, `Algorithm: ${algo.toUpperCase()}`, `No traversal steps`], 'green')}
+    </div>
+    <div class="result-box anim">
+      <div class="result-title">Adjacency Matrix</div>
+      <div class="tt-wrap">${matHtml}</div>
+      <div style="margin-top:10px;color:var(--muted);font-size:11px;font-family:var(--mono);">
+        Degree sequence: ${labels.map(l => `${l}:${graphEdges.filter(e=>e.from.label===l||(!directed&&e.to.label===l)).length + (directed?graphEdges.filter(e=>e.to.label===l).length:0)}`).join('  ')}
+      </div>
+    </div>`;
+}
+
+// Init
+window.addEventListener('resize', redrawGraph);
+redrawGraph();
+</script>
+</body>
+</html>
